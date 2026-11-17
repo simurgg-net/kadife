@@ -288,18 +288,66 @@ function joinRoom(){
 
 /* ---------- ARAYÜZ ---------- */
 const cm=()=>s.phase=='setup'?(s.st==='s'?'s':'r'):mode;
-// Kurulumda köşe ve kenar tıklamalarını birbirinden kesin olarak ayır.
-const V=id=>{if(!s)return;if(s.phase==='setup'){if(s.st!=='s')return;if(s.h.s&&s.h.s.includes(id))send({t:'settle',id});return;}const k=mode;if(k==='s'&&s.h.s&&s.h.s.includes(id))send({t:'settle',id});else if(k==='c'&&s.h.c&&s.h.c.includes(id))send({t:'city',id});},
-E=id=>{if(!s)return;if(s.phase==='setup'&&s.st!=='r')return;if(s.h.r&&s.h.r.includes(id))send({t:'road',id});},H=i=>s.mustRob&&send({t:'robber',h:i});
-// Tek ve kalici SVG tiklama dinleyicisi: yeniden cizimde kaybolmaz, inline onclick'e bagimli degildir.
-$('b').addEventListener('click',ev=>{
-  const hit=ev.target.closest('[data-hit]');
-  if(!hit||!s)return;
-  const kind=hit.getAttribute('data-hit'),id=hit.getAttribute('data-id');
-  if(kind==='vertex')V(id);
-  else if(kind==='edge')E(id);
-  else if(kind==='hex')H(Number(id));
-});
+// TAHTA ETKİLEŞİMİ — SVG hedef etiketlerine güvenmez.
+// Fare/dokunma koordinatını SVG koordinatına çevirir, en yakın GEÇERLİ
+// köşe/kenarı oyun grafiğinden bulur. Böylece çizim katmanları tıklamayı yutamaz.
+function svgPointFromEvent(ev){
+  const svg=$('b');
+  if(svg.createSVGPoint && svg.getScreenCTM()){
+    const p=svg.createSVGPoint(); p.x=ev.clientX; p.y=ev.clientY;
+    return p.matrixTransform(svg.getScreenCTM().inverse());
+  }
+  const r=svg.getBoundingClientRect();
+  return {x:-4.9+(ev.clientX-r.left)/r.width*9.8,
+          y:-4.5+(ev.clientY-r.top)/r.height*9};
+}
+function pointSegDistance(p,e){
+  const dx=e.x2-e.x1,dy=e.y2-e.y1,den=dx*dx+dy*dy||1;
+  const t=Math.max(0,Math.min(1,((p.x-e.x1)*dx+(p.y-e.y1)*dy)/den));
+  return Math.hypot(p.x-(e.x1+t*dx),p.y-(e.y1+t*dy));
+}
+function nearest(list,dist,max){
+  let best=null,bd=max;
+  for(const item of list){const d=dist(item);if(d<bd){bd=d;best=item;}}
+  return best;
+}
+function handleBoardPointer(ev){
+  if(!s || s.phase==='lobby' || s.phase==='over') return;
+  if(ev.button!==undefined && ev.button!==0) return;
+  const p=svgPointFromEvent(ev);
+  // Kurulum: sadece mevcut adımın geçerli hamlesi kabul edilir.
+  if(s.phase==='setup'){
+    if(s.turn!==s.me) return;
+    if(s.st==='s'){
+      const v=nearest(s.V.filter(v=>s.h.s.includes(v.id)),v=>Math.hypot(p.x-v.x,p.y-v.y),.48);
+      if(v){ev.preventDefault();send({t:'settle',id:v.id});}
+      else toast('Altın halkalı köşe noktasına biraz daha yakından tıkla.');
+      return;
+    }
+    if(s.st==='r'){
+      const e=nearest(s.E.filter(e=>s.h.r.includes(e.id)),e=>pointSegDistance(p,e),.72);
+      if(e){ev.preventDefault();send({t:'road',id:e.id});}
+      else toast('Parlayan yol çizgisinin üzerine veya yakınına tıkla.');
+      return;
+    }
+  }
+  if(s.mustRob){
+    const h=nearest(s.hexes.map((h,i)=>({...h,id:i})),h=>Math.hypot(p.x-h.x,p.y-h.y),.88);
+    if(h && h.id!==s.rob){ev.preventDefault();send({t:'robber',h:h.id});}
+    return;
+  }
+  if(s.phase!=='play' || s.turn!==s.me || !s.rolled) return;
+  if(mode==='r'){
+    const e=nearest(s.E.filter(e=>s.h.r.includes(e.id)),e=>pointSegDistance(p,e),.72);
+    if(e){ev.preventDefault();send({t:'road',id:e.id});}
+  } else {
+    const candidates=mode==='c'?s.V.filter(v=>s.h.c.includes(v.id)):s.V.filter(v=>s.h.s.includes(v.id));
+    const v=nearest(candidates,v=>Math.hypot(p.x-v.x,p.y-v.y),.48);
+    if(v){ev.preventDefault();send({t:mode==='c'?'city':'settle',id:v.id});}
+  }
+}
+$('b').addEventListener('pointerup',handleBoardPointer,{passive:false});
+$('b').addEventListener('click',ev=>{ev.preventDefault();},{passive:false});
 const pts=(x,y,k=1)=>[0,1,2,3,4,5].map(i=>{const a=Math.PI/3*i-Math.PI/6;return(x+k*Math.cos(a)).toFixed(3)+','+(y+k*Math.sin(a)).toFixed(3)}).join(' ');
 const SP=[[-.5,.45],[.5,.45],[-.5,-.45],[.5,-.45],[0,.7],[0,-.7]];
 function render(){
@@ -334,7 +382,7 @@ function render(){
      const active=s.h[m]&&s.h[m].includes(v.id);
      const hl=active?`<circle class="glow" cx="${v.x}" cy="${v.y}" r=".36" fill="#ffd76a" fill-opacity=".24" stroke="#fff0a8" stroke-width=".09"/><circle cx="${v.x}" cy="${v.y}" r=".25" fill="none" stroke="#fff9df" stroke-width=".04" stroke-dasharray=".07 .045"/>`:'';
      return`<g class=k data-hit="vertex" data-id="${v.id}" style="pointer-events:all;cursor:pointer">${hl}${d}<circle cx="${v.x}" cy="${v.y}" r=".31" fill="transparent" pointer-events="all"/></g>`}).join('')}
-function edgeHits(){return s.E.filter(e=>e.o===null&&s.h&&s.h.r&&s.h.r.includes(e.id)).map(e=>{const dx=e.x2-e.x1,dy=e.y2-e.y1;return`<line class=k x1="${e.x1+dx*.22}" y1="${e.y1+dy*.22}" x2="${e.x1+dx*.78}" y2="${e.y1+dy*.78}" stroke="transparent" stroke-width=".48" pointer-events="stroke" data-hit="edge" data-id="${e.id}"/>`}).join('')}
+function edgeHits(){return s.E.filter(e=>e.o===null&&s.h&&s.h.r&&s.h.r.includes(e.id)).map(e=>{const dx=e.x2-e.x1,dy=e.y2-e.y1;return`<line class=k x1="${e.x1+dx*.22}" y1="${e.y1+dy*.22}" x2="${e.x1+dx*.78}" y2="${e.y1+dy*.78}" stroke="transparent" stroke-width=".72" pointer-events="stroke" data-hit="edge" data-id="${e.id}"/>`}).join('')}
 function guide(){
   const me=s.me,P=s.players,cur=P[s.turn],my=s.turn==me,h=s.h,box=$('guide');let t;
   if(s.phase=='lobby')t=me==0?'👑 Odayı sen kurdun. Arkadaşların <b>oda kodunu</b> girince <b>▶ Oyunu başlat</b>a bas (en az 2 kişi).':'Oda kurucusunun oyunu başlatmasını bekle.';
@@ -343,7 +391,7 @@ function guide(){
   else if(!my)t=`⏳ Sıra <b>${cur.name}</b> oyuncusunda. Beklerken: zarda senin arazine denk gelen sayı çıkarsa kartların otomatik artar.`;
   else if(s.phase=='setup'){const r2=s.si>=s.np;
     t=s.st=='s'?`<b>Adım 1/2 — Köyünü kur</b><br>Haritada <b>parlayan altın halkalardan</b> birine tıkla.${r2?'<br>🎁 Bu 2. köyün: çevresindeki her araziden 1 kaynak kazanırsın.':''}<br>💡 6, 8, 5, 9 gibi sık çıkan sayılara ve farklı kaynaklara değen köşe iyidir.`
-      :`<b>Adım 2/2 — Yol koy</b><br>Az önce kurduğun köyün yanındaki <b>parlayan çizgilerden</b> birine tıkla (çizginin ortasına).`}
+      :`<b>Adım 2/2 — Yol koy</b><br>Az önce kurduğun köyün yanındaki <b>parlayan çizgilerden</b> birine veya çizginin hemen yakınına tıkla.`}
   else if(s.mustRob)t='🦹 <b>7 geldi!</b> Haydutu taşı: <b>parlayan bir araziye</b> tıkla. O arazi üretmez; yanında köyü olan birinden kart çalarsın.';
   else if(!s.rolled)t='<b>1. Önce 🎲 Zar at</b> butonuna bas. Çıkan sayıdaki araziler kaynak verir.';
   else{
