@@ -229,7 +229,7 @@ function act(b){
 function hints(i){
   const h={s:[],c:[],r:[]};if(g.turn!==i)return h;
   const V=Object.values(g.V),E=Object.values(g.E),p=g.players[i];
-  if(g.phase=='setup'){if(g.st=='s')h.s=V.filter(v=>free(v.id)).map(v=>v.id);else h.r=E.filter(e=>e.o===null&&(e.a==g.last||e.b==g.last)).map(e=>e.id)}
+  if(g.phase=='setup'){if(g.st==='s')h.s=V.filter(v=>free(v.id)).map(v=>v.id);else if(g.st==='r'&&g.last)h.r=E.filter(e=>e.o===null&&(e.a===g.last||e.b===g.last)).map(e=>e.id)}
   else if(g.phase=='play'&&g.rolled&&!g.mustRob){
     if(can(p,COST.road))h.r=E.filter(e=>e.o===null&&roadOk(e,i)).map(e=>e.id);
     if(can(p,COST.settle))h.s=V.filter(v=>free(v.id)&&linked(v.id,i)).map(v=>v.id);
@@ -271,13 +271,15 @@ function joinRoom(){
     conn.on('close',()=>toast('Bağlantı koptu'))})}
 
 /* ---------- ARAYÜZ ---------- */
-const cm=()=>s.phase=='setup'?(s.st=='s'?'s':'r'):mode;
-const V=id=>{if(!s)return;const k=cm()=='c'?'c':'s';if(s.h[k]&&s.h[k].includes(id))send({t:k=='c'?'city':'settle',id});},E=id=>{if(s&&s.h.r&&s.h.r.includes(id))send({t:'road',id});},H=i=>s.mustRob&&send({t:'robber',h:i});
+const cm=()=>s.phase=='setup'?(s.st==='s'?'s':'r'):mode;
+// Kurulumda köşe ve kenar tıklamalarını birbirinden kesin olarak ayır.
+const V=id=>{if(!s)return;if(s.phase==='setup'){if(s.st!=='s')return;if(s.h.s&&s.h.s.includes(id))send({t:'settle',id});return;}const k=mode;if(k==='s'&&s.h.s&&s.h.s.includes(id))send({t:'settle',id});else if(k==='c'&&s.h.c&&s.h.c.includes(id))send({t:'city',id});},
+E=id=>{if(!s)return;if(s.phase==='setup'&&s.st!=='r')return;if(s.h.r&&s.h.r.includes(id))send({t:'road',id});},H=i=>s.mustRob&&send({t:'robber',h:i});
 const pts=(x,y,k=1)=>[0,1,2,3,4,5].map(i=>{const a=Math.PI/3*i-Math.PI/6;return(x+k*Math.cos(a)).toFixed(3)+','+(y+k*Math.sin(a)).toFixed(3)}).join(' ');
 const SP=[[-.5,.45],[.5,.45],[-.5,-.45],[.5,-.45],[0,.7],[0,-.7]];
 function render(){
   if(!s)return;const me=s.me,P=s.players,lobby=s.phase=='lobby',my=!lobby&&s.turn==me,play=my&&s.phase=='play',cur=P[s.turn],col=o=>P[o].col,m=cm();
-  $('st').textContent=lobby?`Lobi: ${P.length}/5 — arkadaşların bağlansın`:s.phase=='over'?`🏆 ${P[s.win].name} kazandı!`:s.phase=='setup'?`${cur.name}: bir ${s.st=='s'?'KÖY':'YOL'} koy`:`${cur.name} oynuyor${s.mustRob?' · haydutu taşı!':''}`;
+  $('st').textContent=lobby?`Lobi: ${P.length}/5 — arkadaşların bağlansın`:s.phase=='over'?`🏆 ${P[s.win].name} kazandı!`:s.phase=='setup'?`${cur.name}: ${s.st==='s'?'ÖNCE KÖYÜNÜ KUR':'ŞİMDİ KÖYÜNE BAĞLI BİR YOL KOY'}`:`${cur.name} oynuyor${s.mustRob?' · haydutu taşı!':''}`;
   $('win').hidden=s.phase!='over';if(s.win!=null)$('wt').textContent='🏆 '+P[s.win].name+' kazandı!';
   $('pl').innerHTML=P.map((p,i)=>`<div class="pl ${!lobby&&i==s.turn?'cur':''}"><i class=dot style="background:${p.col}"></i>${p.name}${i==me?' (sen)':''}${p.hasDice?' 🎲':''}<span>👑 ${p.vp} · 🛣️ ${p.road}${p.longest?' ⭐':''} · 🃏 ${p.n}</span></div>`).join('');
   const r=P[me]&&P[me].res;$('hand').innerHTML=r?RES.map(k=>`<div class=rc title="${C[k][0]}"><img src="${RIMG[k]}" alt=""><span>${C[k][0]}</span><b>${r[k]}</b></div>`).join(''):'';
@@ -301,5 +303,5 @@ function render(){
     if(v.o!=null)d=v.c?`<path transform="translate(${v.x},${v.y})" d="M-.22,.17V-.05H-.06V-.17L.05,-.27L.16,-.17V-.05H.22V.17Z" fill="${c}" stroke="#111" stroke-width=".04" filter="url(#sh)"/>`:
       `<path transform="translate(${v.x},${v.y})" d="M-.17,.15V-.02L0,-.19L.17,-.02V.15Z" fill="${c}" stroke="#111" stroke-width=".04" filter="url(#sh)"/>`;
     const hl=s.h[m]&&s.h[m].includes(v.id)?`<circle class=glow cx="${v.x}" cy="${v.y}" r=".16" fill="#fff" stroke="${m=='c'?'#f2c94c':'#fff'}" stroke-width=".04"/>`:'';
-    return`<g class=k onclick="V('${v.id}')">${hl}${d}<circle cx="${v.x}" cy="${v.y}" r=".34" fill="#0000"/></g>`}).join('')}
+    return`<g class=k onclick="V('${v.id}')" style="pointer-events:all">${hl}${d}<circle cx="${v.x}" cy="${v.y}" r=".38" fill="#0000" pointer-events="all"/></g>`}).join('')}
 </script>
