@@ -46,12 +46,47 @@ button:disabled{opacity:.4}.die-face{background:linear-gradient(145deg,#fff8e7,#
 .ov{background:#241308c9}.ov .card{background:linear-gradient(#f4e5c9,#d9bd8d);color:#503018}
 .ov .card h1{color:#6e3518}
 @media(max-width:900px){#bw{padding:8px}#b{height:62vh}}
+
+/* KADİFE — giriş ekranı ve kurulum etkileşimi */
+.ov{background:radial-gradient(ellipse at 50% 35%,#5a351fc9,#140b08f2 72%),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.13'/%3E%3C/svg%3E");backdrop-filter:blur(5px)}
+.ov .lobby-card{position:relative;width:min(92vw,460px);max-width:460px;padding:34px 38px 25px;text-align:center;color:#f8e8c8;background:linear-gradient(145deg,#704323,#3c2114 55%,#29160f);border:2px solid #c69a55;border-radius:18px;box-shadow:0 24px 80px #000b,inset 0 0 0 5px #e3bd7650,inset 0 0 35px #120904;overflow:hidden}
+.lobby-card:before,.lobby-card:after{content:'✦';position:absolute;color:#e5bd70;font-size:20px;top:13px}.lobby-card:before{left:17px}.lobby-card:after{right:17px}
+.lobby-mark{font:800 34px Cinzel,serif;letter-spacing:5px;color:#f6d58b;text-shadow:0 3px 0 #4b2812,0 0 22px #e4a94b55}
+.lobby-sub{margin-top:7px;font:600 10px Inter,sans-serif;letter-spacing:3px;color:#d6ae6e}
+.lobby-intro{margin:22px 0 24px;color:#f0dfc1;font:italic 14px Georgia,serif}
+.lobby-label{display:block;text-align:left;margin:13px 0 5px;color:#e7c98f;font-size:10px;font-weight:800;letter-spacing:1.6px}
+#lobby input:not([type=checkbox]){width:100%;margin:0;padding:13px 14px;border:1px solid #c39a61;border-radius:9px;background:#f0dfbd;color:#402514;font:600 14px Inter;box-shadow:inset 0 2px 5px #5a351522}
+#lobby input::placeholder{color:#947958}
+#lobby .dice-choice{justify-content:center;margin:13px 0 18px;color:#ead8b6}
+.lobby-actions{padding:17px 18px;background:#21130e55;border:1px solid #d0a45b55;border-radius:12px}
+#lobby button{width:100%;padding:13px 16px;border-radius:9px;font:800 13px Cinzel,serif;letter-spacing:.5px}
+#lobby .lobby-primary{background:linear-gradient(#f5d58c,#c18a3e);color:#3d210e;border:1px solid #ffe4a7;box-shadow:0 4px 0 #7d4a20,0 8px 16px #0005}
+#lobby .lobby-secondary{margin-top:10px;background:linear-gradient(#ead9b7,#c6a778);color:#452a16;border:1px solid #f5e3c1}
+.lobby-secondary span{float:right;font-size:18px;line-height:13px}
+.lobby-divider{display:flex;align-items:center;gap:12px;margin:16px 0;color:#c7a879;font-size:9px;letter-spacing:2px}.lobby-divider:before,.lobby-divider:after{content:'';height:1px;flex:1;background:#c7a87955}
+.lobby-foot{margin-top:20px;color:#c9a879;font-size:9px;letter-spacing:2px}
+#room{background:linear-gradient(135deg,#f1dfba,#d9bd8d);color:#49301c;border:1px solid #9b6a35;box-shadow:inset 0 0 0 2px #fff6}
+#st{background:linear-gradient(135deg,#f4e4c4,#ddc092)!important;color:#4b2d18!important;border:1px solid #a87943!important}
+#side{background:linear-gradient(160deg,#59331d,#2b190f);border-left:3px solid #a8753c}
+#side .card{background:linear-gradient(135deg,#f0dfbd,#d7bb8c);color:#49301c;border:1px solid #a87943}
+#side .pl{color:#f6e8ce}#side .pl.cur{background:#e6bb6540;border-color:#e6bb65}
+#side h1{color:#f4d18a}
+@media(max-width:520px){.ov .lobby-card{padding:30px 22px 22px}.lobby-mark{font-size:28px}}
+
 </style>
 <body>
 <div id=toast></div>
-<div id=lobby class=ov><div class=card><h1>🏝️ Kadife</h1><p>2–5 kişi çevrim içi oyna. Fiziksel zarın varsa işaretle!</p>
-<input id=nm placeholder="Adın" maxlength=14><label class="dice-choice"><input id=hasDice type=checkbox> Fiziksel zarım var</label><button onclick="startHost()">Oda kur</button><hr style="opacity:.2">
-<input id=cd placeholder="Oda kodu"><button onclick="joinRoom()">Odaya katıl</button></div></div>
+<div id=lobby class=ov><div class="card lobby-card">
+  <div class="lobby-mark">✦ KADİFE ✦</div><div class="lobby-sub">DOSTLARINLA BİR ADA KUR</div>
+  <p class="lobby-intro">Kaynaklarını topla, yollarını kur ve adanın hâkimi ol.</p>
+  <label class="lobby-label" for=nm>OYUNCU ADI</label><input id=nm placeholder="Adını yaz..." maxlength=14>
+  <label class="dice-choice"><input id=hasDice type=checkbox> Fiziksel zar kullanacağım</label>
+  <div class="lobby-actions"><button class="lobby-primary" onclick="startHost()">✦ Yeni Oda Kur</button>
+  <div class="lobby-divider"><span>VEYA</span></div>
+  <label class="lobby-label" for=cd>ODA KODU</label><input id=cd placeholder="Örn. A1B2C3" maxlength=8>
+  <button class="lobby-secondary" onclick="joinRoom()">Odaya Katıl <span>→</span></button></div>
+  <div class="lobby-foot">2–5 OYUNCU · ÇEVRİM İÇİ STRATEJİ</div>
+</div></div>
 <div id=win class=ov hidden><div class=card><h1 id=wt></h1><button onclick="send({t:'reset'})">Yeni oyun</button></div></div>
 <div id=app><div id=bw><svg id=b viewBox="-4.9 -4.5 9.8 9"></svg></div>
 <div id=side><h1>Kadife</h1>
@@ -150,6 +185,8 @@ function act(b){
   if(g.phase=='over'||g.phase=='lobby')return{err:'Şu an olmaz'};
   if(g.turn!==me)return{err:'Sıra sende değil'};
   if(g.phase=='setup'){
+    if(g.st=='s'&&t!=='settle')return{err:'Önce parlayan köşe noktalarından birine başlangıç köyünü kur.'};
+    if(g.st=='r'&&t!=='road')return{err:'Köyün kuruldu. Şimdi köyüne bağlı parlayan kenarlardan birine yol koy.'};
     if(t=='settle'){if(g.st!='s')return{err:'Şimdi yol koy'};if(!g.V[b.id]||!free(b.id))return{err:'Buraya olmaz'};
       g.V[b.id].o=me;g.last=b.id;g.st='r';
       if(g.si>=g.players.length)g.hexes.forEach(h=>{if(h.res!='desert'&&h.v.includes(b.id))p.res[h.res]++});return{}}
@@ -201,7 +238,7 @@ function hints(i){
 function view(pid){return{me:pid,phase:g.phase,turn:g.turn,rolled:g.rolled,d:g.d,rob:g.rob,mustRob:g.mustRob,st:g.st,win:g.win,log:g.log,h:hints(pid),
   hexes:g.hexes.map(h=>({x:h.x,y:h.y,res:h.res,num:h.num})),V:Object.values(g.V),
   E:Object.values(g.E).map(e=>({id:e.id,o:e.o,x1:g.V[e.a].x,y1:g.V[e.a].y,x2:g.V[e.b].x,y2:g.V[e.b].y})),
-  players:g.players.map((p,i)=>({name:p.name,col:p.col,vp:vp(i),road:roadLength(i),longest:g.longest===i,n:RES.reduce((n,r)=>n+p.res[r],0),res:i===pid?p.res:undefined}))}}
+  players:g.players.map((p,i)=>({name:p.name,col:p.col,hasDice:!!p.hasDice,vp:vp(i),road:roadLength(i),longest:g.longest===i,n:RES.reduce((n,r)=>n+p.res[r],0),res:i===pid?p.res:undefined}))}}
 
 /* ---------- AĞ (PeerJS, tarayıcıdan tarayıcıya) ---------- */
 function bc(){s=view(0);render();conns.forEach(c=>c.open&&c.send(view(c.pid)))}
@@ -235,7 +272,7 @@ function joinRoom(){
 
 /* ---------- ARAYÜZ ---------- */
 const cm=()=>s.phase=='setup'?(s.st=='s'?'s':'r'):mode;
-const V=id=>s.phase&&send({t:cm()=='c'?'city':'settle',id}),E=id=>send({t:'road',id}),H=i=>s.mustRob&&send({t:'robber',h:i});
+const V=id=>{if(!s)return;const k=cm()=='c'?'c':'s';if(s.h[k]&&s.h[k].includes(id))send({t:k=='c'?'city':'settle',id});},E=id=>{if(s&&s.h.r&&s.h.r.includes(id))send({t:'road',id});},H=i=>s.mustRob&&send({t:'robber',h:i});
 const pts=(x,y,k=1)=>[0,1,2,3,4,5].map(i=>{const a=Math.PI/3*i-Math.PI/6;return(x+k*Math.cos(a)).toFixed(3)+','+(y+k*Math.sin(a)).toFixed(3)}).join(' ');
 const SP=[[-.5,.45],[.5,.45],[-.5,-.45],[.5,-.45],[0,.7],[0,-.7]];
 function render(){
@@ -264,5 +301,5 @@ function render(){
     if(v.o!=null)d=v.c?`<path transform="translate(${v.x},${v.y})" d="M-.22,.17V-.05H-.06V-.17L.05,-.27L.16,-.17V-.05H.22V.17Z" fill="${c}" stroke="#111" stroke-width=".04" filter="url(#sh)"/>`:
       `<path transform="translate(${v.x},${v.y})" d="M-.17,.15V-.02L0,-.19L.17,-.02V.15Z" fill="${c}" stroke="#111" stroke-width=".04" filter="url(#sh)"/>`;
     const hl=s.h[m]&&s.h[m].includes(v.id)?`<circle class=glow cx="${v.x}" cy="${v.y}" r=".16" fill="#fff" stroke="${m=='c'?'#f2c94c':'#fff'}" stroke-width=".04"/>`:'';
-    return`<g class=k onclick="V('${v.id}')">${hl}${d}<circle cx="${v.x}" cy="${v.y}" r=".22" fill="#0000"/></g>`}).join('')}
+    return`<g class=k onclick="V('${v.id}')">${hl}${d}<circle cx="${v.x}" cy="${v.y}" r=".34" fill="#0000"/></g>`}).join('')}
 </script>
