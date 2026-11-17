@@ -80,6 +80,74 @@ button:disabled{opacity:.4}.die-face{background:linear-gradient(145deg,#fff8e7,#
 @media(max-width:520px){.ov .lobby-card{padding:30px 22px 22px}.lobby-mark{font-size:28px}}
 
 #guide{background:linear-gradient(135deg,#fff3c9,#f0d48a)!important;border:2px solid #c18a36!important;font-size:13px;line-height:1.55;color:#3d210e!important}#guide b{color:#7a2f16}#guide button{margin-top:8px}
+
+/* KADİFE — oyuncunun elindeki fiziksel kart hissi */
+#bw{display:flex;flex-direction:column;min-height:100vh;position:relative;overflow:hidden}
+#b{height:calc(100vh - 194px);min-height:360px;flex:1 1 auto}
+#handDock{flex:0 0 174px;min-height:174px;position:relative;z-index:2;
+  margin:0 5px 5px;padding:9px 14px 10px;border:1px solid #b9874c;border-radius:12px;
+  background:linear-gradient(180deg,rgba(73,39,20,.97),rgba(35,20,14,.98));
+  box-shadow:inset 0 1px 0 #f5d99b66,inset 0 0 0 3px #d4a15b22,0 -8px 24px #160b0880;
+  color:#f8e8c8;overflow:hidden}
+.dock-head{height:23px;display:flex;align-items:center;justify-content:space-between;padding:0 4px 6px}
+.dock-title{font:800 12px Cinzel,serif;letter-spacing:1.6px;color:#f1d18e}
+.dock-mark{color:#e8b95d;margin-right:7px}
+.dock-total{font:600 10px Inter,sans-serif;color:#d8bd91;background:#ffffff12;border:1px solid #e7c98d33;border-radius:20px;padding:4px 9px}
+.dock-content{height:calc(100% - 23px);display:flex;align-items:center;gap:13px;min-width:0}
+.resource-hand{flex:1 1 68%;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:center}
+.hand-label{font:800 9px Inter,sans-serif;letter-spacing:1.5px;color:#d9b87c;margin:0 0 5px 5px;white-space:nowrap}
+.resource-cards{height:116px;display:flex;align-items:flex-end;overflow-x:auto;overflow-y:visible;padding:3px 8px 8px 12px;scrollbar-width:thin;scrollbar-color:#a8753c #3a2419}
+.resource-cards:empty:after{content:'Henüz kaynak kartın yok';color:#c5a77b;font:italic 12px Georgia,serif}
+.resource-card{--fan:0;position:relative;flex:0 0 68px;width:68px;height:100px;margin-left:-12px;
+  border-radius:8px;border:2px solid #d4ae70;
+  background:linear-gradient(145deg,#fff6df 0%,#f1dfba 55%,#d9bd8e 100%);
+  box-shadow:0 4px 0 #6f421f,0 7px 12px #09050388,inset 0 0 0 2px #fff9;
+  color:#57351c;display:flex;flex-direction:column;align-items:center;justify-content:space-between;
+  padding:6px 4px 5px;transform:rotate(calc((var(--fan) - 2) * 2deg)) translateY(calc(abs(var(--fan) - 2) * 1px));
+  transform-origin:50% 100%;transition:transform .18s ease,margin .18s ease,box-shadow .18s ease;cursor:default}
+.resource-card:first-child{margin-left:0}
+.resource-card:hover{transform:translateY(-17px) rotate(0deg) scale(1.08);z-index:20;box-shadow:0 8px 18px #000a,inset 0 0 0 2px #fff}
+.resource-card img{width:100%;height:61px;object-fit:contain;filter:drop-shadow(0 2px 2px #55351c44);pointer-events:none}
+.resource-card .card-name{font:800 8px Cinzel,serif;letter-spacing:.35px;text-align:center;white-space:nowrap}
+.resource-card .card-type{font:700 7px Inter,sans-serif;letter-spacing:1px;color:#9a7040}
+.dock-divider{height:112px;width:1px;background:linear-gradient(transparent,#d7b47788,transparent);flex:0 0 1px}
+.skill-hand{flex:0 0 31%;min-width:210px;height:100%;display:flex;flex-direction:column;justify-content:center;overflow:hidden}
+.skill-hand .hand-label{display:flex;align-items:center;gap:7px}
+.soon-tag{font:700 7px Inter,sans-serif;letter-spacing:.7px;color:#e9c985;border:1px solid #c18a3d88;border-radius:10px;padding:2px 5px}
+.skill-cards{height:93px;display:flex;align-items:center;padding:0 5px}
+.skill-empty{display:flex;align-items:center;gap:10px;color:#f3e3c5}
+.skill-back{width:54px;height:76px;flex:0 0 54px;border:2px solid #d5b477;border-radius:6px;
+  background:repeating-linear-gradient(45deg,#694126,#694126 5px,#4b2c1b 5px,#4b2c1b 10px);
+  box-shadow:0 3px 0 #28150d,inset 0 0 0 3px #d4aa6b55;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+  color:#f0d08b;transform:rotate(5deg)}
+.skill-back span{font-size:19px}.skill-back b{font:800 8px Cinzel,serif;letter-spacing:1px}.skill-back small{font:700 6px Inter,sans-serif;color:#e0bd7c}
+.skill-empty-copy{display:flex;flex-direction:column;gap:4px;min-width:0}
+.skill-empty-copy b{font:700 10px Inter,sans-serif;color:#f3dfb9}
+.skill-empty-copy small{font:400 9px/1.35 Inter,sans-serif;color:#cbb28d;white-space:normal;max-width:185px}
+@media(max-width:900px){
+ #bw{min-height:auto}
+ #b{height:58vh;min-height:340px;flex:0 0 58vh}
+ #handDock{flex-basis:190px;min-height:190px;margin:0;padding:8px}
+ .dock-content{gap:8px}
+ .resource-hand{flex-basis:60%}
+ .skill-hand{flex-basis:40%;min-width:130px}
+ .resource-card{flex-basis:57px;width:57px;height:88px}
+ .resource-card img{height:51px}
+ .skill-empty-copy small{font-size:8px}
+}
+@media(max-width:520px){
+ #handDock{flex-basis:205px;min-height:205px}
+ .dock-content{align-items:stretch;flex-direction:column;gap:3px}
+ .resource-hand{flex:1 1 120px;min-height:105px}
+ .resource-cards{height:92px}
+ .dock-divider{height:1px;width:100%;flex:0 0 1px}
+ .skill-hand{flex:0 0 66px;min-width:0}
+ .skill-cards{height:45px}
+ .skill-back{width:31px;height:43px;flex-basis:31px}
+ .skill-back span{font-size:12px}.skill-back b{font-size:6px}.skill-back small{display:none}
+ .skill-empty-copy small{display:none}
+}
+
 </style>
 <body>
 <div id=toast></div>
@@ -104,10 +172,34 @@ button:disabled{opacity:.4}.die-face{background:linear-gradient(145deg,#fff8e7,#
 <p><b>Yerleşim:</b> Köyün komşu köşeleri boş olmalı (iki köy arası en az 2 yol). Köy ve yol kendi yol ağına bağlanmalı. Rakibin köyü senin yolunu keser.</p>
 <p><b>Takas:</b> Bankayla 4 aynı kart → 1 istediğin kart.</p>
 <p><small>Henüz yok: limanlar, oyuncular arası takas, gelişim kartları.</small></p></div></div>
-<div id=app><div id=bw><svg id=b viewBox="-4.9 -4.5 9.8 9"></svg></div>
+<div id=app><div id=bw>
+<svg id=b viewBox="-4.9 -4.5 9.8 9"></svg>
+<section id="handDock" aria-label="Oyuncu kartları">
+  <div class="dock-head">
+    <div class="dock-title"><span class="dock-mark">✦</span> ELİNDEKİ KARTLAR</div>
+    <div class="dock-total" id="resourceTotal">0 kaynak kartı</div>
+  </div>
+  <div class="dock-content">
+    <div class="resource-hand">
+      <div class="hand-label">KAYNAKLAR</div>
+      <div id="resourceCards" class="resource-cards"><div class="empty-hand">Kaynak kartların burada görünecek.</div></div>
+    </div>
+    <div class="dock-divider"></div>
+    <div class="skill-hand">
+      <div class="hand-label">GELİŞİM KARTLARI <span class="soon-tag">YAKINDA</span></div>
+      <div id="skillCards" class="skill-cards">
+        <div class="skill-empty">
+          <div class="skill-back"><span>✦</span><b>KADİFE</b><small>GELİŞİM</small></div>
+          <div class="skill-empty-copy"><b>Henüz gelişim kartın yok</b><small>Gelişim kartları oyun motoruna eklendiğinde burada görünecek.</small></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
 <div id=side><h1>Kadife</h1>
 <div class=card id=room></div><div id=st style="font-weight:600"></div><div class=card id=guide></div><div id=pl></div>
-<div class=res id=hand></div><div class=dice id=dice aria-live=polite></div>
+<div class=dice id=dice aria-live=polite></div>
 <div><button id=start onclick="send({t:'start'})">▶ Oyunu başlat</button><button id=roll onclick="send({t:'roll'})">🎲 Bilgisayar zarı at</button>
 <div id=manualRoll hidden class="manual-roll"><small>Fiziksel zarları at ve gelen sonuçları gir:</small>
 <div class="dice-inputs"><input id=die1 type=number min=1 max=6 value=3 aria-label="Birinci zar"><input id=die2 type=number min=1 max=6 value=4 aria-label="İkinci zar"></div>
@@ -355,7 +447,9 @@ function render(){
   $('st').textContent=lobby?`Lobi: ${P.length}/4 — arkadaşların bağlansın`:s.phase=='over'?`🏆 ${P[s.win].name} kazandı!`:s.phase=='setup'?`${cur.name}: ${s.st==='s'?'ÖNCE KÖYÜNÜ KUR':'ŞİMDİ KÖYÜNE BAĞLI BİR YOL KOY'}`:`${cur.name} oynuyor${s.mustRob?' · haydutu taşı!':''}`;
   $('win').hidden=s.phase!='over';if(s.win!=null)$('wt').textContent='🏆 '+P[s.win].name+' kazandı!';
   $('pl').innerHTML=P.map((p,i)=>`<div class="pl ${!lobby&&i==s.turn?'cur':''}"><i class=dot style="background:${p.col}"></i>${p.name}${i==me?' (sen)':''}${p.hasDice?' 🎲':''}<span>👑 ${p.vp} · 🛣️ ${p.road}${p.longest?' ⭐':''} · 🃏 ${p.n}</span></div>`).join('');
-  const r=P[me]&&P[me].res;$('hand').innerHTML=r?RES.map(k=>`<div class=rc title="${C[k][0]}"><img src="${RIMG[k]}" alt=""><span>${C[k][0]}</span><b>${r[k]}</b></div>`).join(''):'';
+  const r=P[me]&&P[me].res;const total=r?RES.reduce((n,k)=>n+(r[k]||0),0):0;
+  $('resourceTotal').textContent=total+' kaynak kartı';
+  $('resourceCards').innerHTML=r?RES.flatMap(k=>rep(Math.max(0,Math.min(30,r[k]||0)),k)).map((k,i)=>`<div class="resource-card" style="--fan:${i}" title="${C[k][0]}"><span class="card-type">KADİFE</span><img src="${RIMG[k]}" alt="${C[k][0]}"><span class="card-name">${C[k][0]}</span></div>`).join(''):'<div class="empty-hand">Kaynak kartların burada görünecek.</div>';
   const dk=s.d.join(),faces=['','⚀','⚁','⚂','⚃','⚄','⚅'];
   $('dice').innerHTML=s.d[0]?`<span class="die-face">${faces[s.d[0]]}</span><span class="die-face">${faces[s.d[1]]}</span>`:'<small>🎲 Zar sonucu burada görünecek</small>';
   $('dice').className='dice'+(dk!=lastDice?' rolling':'');lastDice=dk;
