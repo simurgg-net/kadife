@@ -22,8 +22,8 @@ button{background:linear-gradient(#f7d86a,#e0a82e);color:#2a1c00;cursor:pointer}
 .dice-inputs{display:flex;justify-content:center;gap:8px}.dice-inputs input{width:65px;text-align:center;font-size:20px}
 
 /* Gerçek altın halo ve nabız animasyonu */
-.glow{animation:kadifeGlow 1s ease-in-out infinite alternate;filter:drop-shadow(0 0 5px #ffd76a) drop-shadow(0 0 12px #ffbd32);opacity:1}
-@keyframes kadifeGlow{from{opacity:.72}to{opacity:1}}
+.glow{animation:kadifeGlow 1.15s ease-in-out infinite alternate;filter:url(#glow) drop-shadow(0 0 5px #ffd76a);opacity:1}
+@keyframes kadifeGlow{from{opacity:.78;filter:url(#glow) drop-shadow(0 0 3px #ffd76a)}to{opacity:1;filter:url(#glow) drop-shadow(0 0 11px #ffd76a)}}
 .k{cursor:pointer;touch-action:manipulation}
 #toast{position:fixed;top:12px;left:50%;transform:translateX(-50%);background:#c0392b;padding:8px 14px;border-radius:10px;display:none;z-index:9}
 .ov{position:fixed;inset:0;background:#000b;display:flex;align-items:center;justify-content:center;z-index:5}.ov[hidden]{display:none!important}.ov .card{background:#0d2c3d;padding:22px;max-width:340px;text-align:center}
@@ -89,7 +89,7 @@ button:disabled{opacity:.4}.die-face{background:linear-gradient(145deg,#fff8e7,#
   <div class="lobby-divider"><span>VEYA</span></div>
   <label class="lobby-label" for=cd>ODA KODU</label><input id=cd placeholder="Örn. A1B2C3" maxlength=8>
   <button class="lobby-secondary" onclick="joinRoom()">Odaya Katıl <span>→</span></button></div>
-  <div class="lobby-foot">2–4 OYUNCU · ÇEVRİM İÇİ STRATEJİ</div>
+  <div class="lobby-foot">2–5 OYUNCU · ÇEVRİM İÇİ STRATEJİ</div>
 </div></div>
 <div id=win class=ov hidden><div class=card><h1 id=wt></h1><button onclick="send({t:'reset'})">Yeni oyun</button></div></div>
 <div id=rules class=ov hidden onclick="this.hidden=true"><div class=card style="max-width:540px;text-align:left;max-height:86vh;overflow:auto"><h1>📖 Kurallar</h1>
@@ -149,20 +149,13 @@ function reset(){
   if(five){for(let ri=0;ri<7;ri++){const r=ri-3;for(const q of coords5[ri]) addHex(q,r);}}
   else {for(let q=-2;q<=2;q++)for(let r=-2;r<=2;r++)if(Math.abs(q+r)<=2)addHex(q,r);}
   function addHex(q,r){
-    const res=T[k++],x=Math.sqrt(3)*(q+r/2),y=1.5*r,h={q,r,x,y,res,num:0,v:[]};
+    const res=T[k++],x=Math.sqrt(3)*(q+r/2),y=1.5*r,h={x,y,res,num:res=='desert'?0:N.pop(),v:[]};
     for(let i=0;i<6;i++){const a=Math.PI/3*i-Math.PI/6,cx=x+Math.cos(a),cy=y+Math.sin(a),id=Math.round(cx*100)+','+Math.round(cy*100);
       g.V[id]=g.V[id]||{id,x:cx,y:cy,o:null,c:false};g.adj[id]=g.adj[id]||[];h.v.push(id)}
     for(let i=0;i<6;i++){const a=h.v[i],b=h.v[(i+1)%6],id=[a,b].sort().join('|');
       if(!g.E[id]){g.E[id]={id,a,b,o:null};g.adj[a].push({e:id,o:b});g.adj[b].push({e:id,o:a})}}
     if(res=='desert')g.rob=g.hexes.length;g.hexes.push(h);
   }
-  // Catan setup: 6 and 8 tokens may not touch. Shuffle until the red tokens are separated.
-  let nums,valid=false,tries=0;
-  while(!valid&&tries++<500){
-    nums=sh(N.slice());valid=true;let ni=0;const assigned=g.hexes.map(h=>h.res==='desert'?0:nums[ni++]);
-    for(let i=0;i<g.hexes.length&&valid;i++){if(assigned[i]!==6&&assigned[i]!==8)continue;for(let j=i+1;j<g.hexes.length;j++){if(assigned[j]!==6&&assigned[j]!==8)continue;const dq=g.hexes[i].q-g.hexes[j].q,dr=g.hexes[i].r-g.hexes[j].r;if(Math.max(Math.abs(dq),Math.abs(dr),Math.abs(dq+dr))===1){valid=false;break}}}
-  }
-  let ni=0;g.hexes.forEach(h=>{h.num=h.res==='desert'?0:nums[ni++]});
 }
 function roadLength(player){
   const owned=Object.values(g.E).filter(e=>e.o===player);let best=0;
@@ -195,7 +188,7 @@ const L=t=>{g.log.unshift(t);g.log.length=Math.min(g.log.length,9)};
 function act(b){
   const me=b.pid,p=g.players[me],t=b.t;
   if(t=='join'){
-    if(g.phase!='lobby')return{err:'Oyun başladı'};if(g.players.length>=4)return{err:'Oda dolu (en fazla 4 oyuncu)'};
+    if(g.phase!='lobby')return{err:'Oyun başladı'};if(g.players.length>=5)return{err:'Oda dolu (en fazla 5 oyuncu)'};
     const name=String(b.name||'Oyuncu').replace(/[<>&"']/g,'').slice(0,14)||'Oyuncu';
     g.players.push({name,col:COL[g.players.length],hasDice:!!b.hasDice,res:Object.fromEntries(RES.map(r=>[r,0]))});L(name+' katıldı');return{pid:g.players.length-1}}
   if(t=='reset'){if(g.phase=='over')reset();return{}}
@@ -320,15 +313,16 @@ function render(){
      s.E.map(e=>{const dx=e.x2-e.x1,dy=e.y2-e.y1,a=[e.x1+dx*.14,e.y1+dy*.14],b=[e.x1+dx*.86,e.y1+dy*.86],ln=(w,c,x='')=>`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="${c}" stroke-width="${w}" stroke-linecap="round" ${x}/>`;
      const active=e.o===null&&s.h.r&&s.h.r.includes(e.id)&&m==='r';
      return e.o!=null?ln(.22,'#382312')+ln(.15,col(e.o)):(active?ln(.23,'#ffd76a','class=glow')+ln(.105,'#fff4cf'):'')}).join('')+
-   edgeHits()+s.V.map(v=>{const c=v.o!=null?col(v.o):'';let d='';
+   edgeHits()+
+   s.V.map(v=>{const c=v.o!=null?col(v.o):'';let d='';
      if(v.o!=null){
        d=v.c?`<g transform="translate(${v.x},${v.y})" filter="url(#sh)"><path d="M-.29,.19L-.25,.25H.25L.29,.19Z" fill="#79502b" stroke="#3c2514" stroke-width=".025"/><path d="M-.25,.17V-.07H-.07V-.2H.07V-.07H.25V.17Z" fill="#dfc18f" stroke="#684522" stroke-width=".035"/><path d="M-.29,-.055L-.12,-.25H.12L.29,-.055Z" fill="${c}" stroke="#542d1b" stroke-width=".04"/><path d="M-.055,.17V.015H.055V.17Z" fill="#69401f"/><rect x="-.205" y="-.035" width=".065" height=".075" rx=".012" fill="#8fc4d1" stroke="#69401f" stroke-width=".018"/><rect x=".14" y="-.035" width=".065" height=".075" rx=".012" fill="#8fc4d1" stroke="#69401f" stroke-width=".018"/></g>`:
        `<g transform="translate(${v.x},${v.y})" filter="url(#sh)"><path d="M-.24,.17L-.21,.23H.21L.24,.17Z" fill="#79502b" stroke="#3c2514" stroke-width=".025"/><path d="M-.2,.16V-.035L0,-.2L.2,-.035V.16Z" fill="#e4c99b" stroke="#684522" stroke-width=".035"/><path d="M-.245,-.025L0,-.29L.245,-.025Z" fill="${c}" stroke="#542d1b" stroke-width=".04"/><path d="M-.055,.16V.025H.055V.16Z" fill="#69401f"/><rect x="-.15" y=".015" width=".06" height=".065" rx=".01" fill="#8fc4d1" stroke="#69401f" stroke-width=".018"/><rect x=".09" y=".015" width=".06" height=".065" rx=".01" fill="#8fc4d1" stroke="#69401f" stroke-width=".018"/></g>`;
      }
      const active=s.h[m]&&s.h[m].includes(v.id);
-     const hl=active?`<circle class="glow" cx="${v.x}" cy="${v.y}" r=".34" fill="#ffd76a" fill-opacity=".13" stroke="#ffe08a" stroke-width=".075"/><circle cx="${v.x}" cy="${v.y}" r=".24" fill="none" stroke="#fff4d1" stroke-width=".025" stroke-dasharray=".07 .045"/>`:'';
-     return`<g class=k onclick="V('${v.id}')" style="pointer-events:all">${hl}${d}<circle cx="${v.x}" cy="${v.y}" r=".34" fill="transparent" pointer-events="all"/></g>`}).join('')}
-function edgeHits(){return s.E.filter(e=>e.o===null).map(e=>{const dx=e.x2-e.x1,dy=e.y2-e.y1;return`<line class=k x1="${e.x1+dx*.25}" y1="${e.y1+dy*.25}" x2="${e.x1+dx*.75}" y2="${e.y1+dy*.75}" stroke="transparent" stroke-width=".30" pointer-events="stroke" onclick="E('${e.id}')"/>`}).join('')}
+     const hl=active?`<circle class="glow" cx="${v.x}" cy="${v.y}" r=".36" fill="#ffd76a" fill-opacity=".24" stroke="#fff0a8" stroke-width=".09"/><circle cx="${v.x}" cy="${v.y}" r=".25" fill="none" stroke="#fff9df" stroke-width=".04" stroke-dasharray=".07 .045"/>`:'';
+     return`<g class=k onclick="V('${v.id}')" style="pointer-events:all">${hl}${d}<circle cx="${v.x}" cy="${v.y}" r=".2" fill="transparent" pointer-events="all"/></g>`}).join('')}
+function edgeHits(){return s.E.filter(e=>e.o===null&&s.h&&s.h.r&&s.h.r.includes(e.id)).map(e=>{const dx=e.x2-e.x1,dy=e.y2-e.y1;return`<line class=k x1="${e.x1+dx*.22}" y1="${e.y1+dy*.22}" x2="${e.x1+dx*.78}" y2="${e.y1+dy*.78}" stroke="transparent" stroke-width=".36" pointer-events="stroke" onclick="E('${e.id}')"/>`}).join('')}
 function guide(){
   const me=s.me,P=s.players,cur=P[s.turn],my=s.turn==me,h=s.h,box=$('guide');let t;
   if(s.phase=='lobby')t=me==0?'👑 Odayı sen kurdun. Arkadaşların <b>oda kodunu</b> girince <b>▶ Oyunu başlat</b>a bas (en az 2 kişi).':'Oda kurucusunun oyunu başlatmasını bekle.';
@@ -336,8 +330,8 @@ function guide(){
   else if(me==null||!P[me])t='İzleyicisin.';
   else if(!my)t=`⏳ Sıra <b>${cur.name}</b> oyuncusunda. Beklerken: zarda senin arazine denk gelen sayı çıkarsa kartların otomatik artar.`;
   else if(s.phase=='setup'){const r2=s.si>=s.np;
-    t=s.st=='s'?`<b>Adım 1/2 — Köyünü kur</b><br>Haritada <b>altın ışıkla parlayan köşe noktalarından</b> birine tıkla.${r2?'<br>🎁 Bu 2. köyün: çevresindeki her araziden 1 kaynak kazanırsın.':''}<br>💡 6, 8, 5, 9 gibi sık çıkan sayılara ve farklı kaynaklara değen köşe iyidir.`
-      :`<b>Adım 2/2 — Yol koy</b><br>Az önce kurduğun köyün yanındaki <b>altın ışıkla parlayan kenarlardan</b> birine tıkla (çizginin ortasına).`}
+    t=s.st=='s'?`<b>Adım 1/2 — Köyünü kur</b><br>Haritada <b>parlayan altın halkalardan</b> birine tıkla.${r2?'<br>🎁 Bu 2. köyün: çevresindeki her araziden 1 kaynak kazanırsın.':''}<br>💡 6, 8, 5, 9 gibi sık çıkan sayılara ve farklı kaynaklara değen köşe iyidir.`
+      :`<b>Adım 2/2 — Yol koy</b><br>Az önce kurduğun köyün yanındaki <b>parlayan çizgilerden</b> birine tıkla (çizginin ortasına).`}
   else if(s.mustRob)t='🦹 <b>7 geldi!</b> Haydutu taşı: <b>parlayan bir araziye</b> tıkla. O arazi üretmez; yanında köyü olan birinden kart çalarsın.';
   else if(!s.rolled)t='<b>1. Önce 🎲 Zar at</b> butonuna bas. Çıkan sayıdaki araziler kaynak verir.';
   else{
