@@ -76,6 +76,7 @@ button:disabled{opacity:.4}.die-face{background:linear-gradient(145deg,#fff8e7,#
 #side h1{color:#f4d18a}
 @media(max-width:520px){.ov .lobby-card{padding:30px 22px 22px}.lobby-mark{font-size:28px}}
 
+#guide{background:linear-gradient(135deg,#fff3c9,#f0d48a)!important;border:2px solid #c18a36!important;font-size:13px;line-height:1.55;color:#3d210e!important}#guide b{color:#7a2f16}#guide button{margin-top:8px}
 </style>
 <body>
 <div id=toast></div>
@@ -91,9 +92,18 @@ button:disabled{opacity:.4}.die-face{background:linear-gradient(145deg,#fff8e7,#
   <div class="lobby-foot">2–5 OYUNCU · ÇEVRİM İÇİ STRATEJİ</div>
 </div></div>
 <div id=win class=ov hidden><div class=card><h1 id=wt></h1><button onclick="send({t:'reset'})">Yeni oyun</button></div></div>
+<div id=rules class=ov hidden onclick="this.hidden=true"><div class=card style="max-width:540px;text-align:left;max-height:86vh;overflow:auto"><h1>📖 Kurallar</h1>
+<p><b>Amaç:</b> 10 puana ilk ulaşan kazanır. Köy 1, şehir 2 puan; 5+ uzunlukta en uzun yol +2.</p>
+<p><b>Kurulum:</b> Sırayla herkes 1 köy + 1 yol koyar, sonra ters sırayla 2. köy + yol. 2. köyün çevresindeki araziler birer kaynak verir.</p>
+<p><b>Tur:</b> 1) Zar at: çıkan sayılı araziye değen köy 1, şehir 2 kaynak alır. 2) Kur ya da takas yap. 3) Turu bitir.</p>
+<p><b>7 gelirse:</b> 7'den fazla kartı olan yarısını kaybeder; zar atan haydutu başka araziye koyar ve komşudan 1 kart çalar. Haydutlu arazi üretmez.</p>
+<p><b>Maliyetler:</b><br>🛣️ Yol: 1 odun + 1 tuğla<br>🏠 Köy: 1 odun + 1 tuğla + 1 koyun + 1 buğday<br>🏙️ Şehir (köyü yükseltir): 2 buğday + 3 maden</p>
+<p><b>Yerleşim:</b> Köyün komşu köşeleri boş olmalı (iki köy arası en az 2 yol). Köy ve yol kendi yol ağına bağlanmalı. Rakibin köyü senin yolunu keser.</p>
+<p><b>Takas:</b> Bankayla 4 aynı kart → 1 istediğin kart.</p>
+<p><small>Henüz yok: limanlar, oyuncular arası takas, gelişim kartları.</small></p></div></div>
 <div id=app><div id=bw><svg id=b viewBox="-4.9 -4.5 9.8 9"></svg></div>
 <div id=side><h1>Kadife</h1>
-<div class=card id=room></div><div id=st style="font-weight:600"></div><div id=pl></div>
+<div class=card id=room></div><div id=st style="font-weight:600"></div><div class=card id=guide></div><div id=pl></div>
 <div class=res id=hand></div><div class=dice id=dice aria-live=polite></div>
 <div><button id=start onclick="send({t:'start'})">▶ Oyunu başlat</button><button id=roll onclick="send({t:'roll'})">🎲 Bilgisayar zarı at</button>
 <div id=manualRoll hidden class="manual-roll"><small>Fiziksel zarları at ve gelen sonuçları gir:</small>
@@ -238,7 +248,7 @@ function hints(i){
     if(can(p,COST.settle))h.s=V.filter(v=>free(v.id)&&linked(v.id,i)).map(v=>v.id);
     if(can(p,COST.city))h.c=V.filter(v=>v.o===i&&!v.c).map(v=>v.id)}
   return h}
-function view(pid){return{me:pid,phase:g.phase,turn:g.turn,rolled:g.rolled,d:g.d,rob:g.rob,mustRob:g.mustRob,st:g.st,win:g.win,log:g.log,h:hints(pid),
+function view(pid){return{me:pid,phase:g.phase,turn:g.turn,rolled:g.rolled,d:g.d,rob:g.rob,mustRob:g.mustRob,st:g.st,si:g.si,np:g.players.length,win:g.win,log:g.log,h:hints(pid),
   hexes:g.hexes.map(h=>({x:h.x,y:h.y,res:h.res,num:h.num})),V:Object.values(g.V),
   E:Object.values(g.E).map(e=>({id:e.id,o:e.o,x1:g.V[e.a].x,y1:g.V[e.a].y,x2:g.V[e.b].x,y2:g.V[e.b].y})),
   players:g.players.map((p,i)=>({name:p.name,col:p.col,hasDice:!!p.hasDice,vp:vp(i),road:roadLength(i),longest:g.longest===i,n:RES.reduce((n,r)=>n+p.res[r],0),res:i===pid?p.res:undefined}))}}
@@ -281,7 +291,7 @@ E=id=>{if(!s)return;if(s.phase==='setup'&&s.st!=='r')return;if(s.h.r&&s.h.r.incl
 const pts=(x,y,k=1)=>[0,1,2,3,4,5].map(i=>{const a=Math.PI/3*i-Math.PI/6;return(x+k*Math.cos(a)).toFixed(3)+','+(y+k*Math.sin(a)).toFixed(3)}).join(' ');
 const SP=[[-.5,.45],[.5,.45],[-.5,-.45],[.5,-.45],[0,.7],[0,-.7]];
 function render(){
-  if(!s)return;const me=s.me,P=s.players,lobby=s.phase=='lobby',my=!lobby&&s.turn==me,play=my&&s.phase=='play',cur=P[s.turn],col=o=>P[o].col,m=cm();
+  if(!s)return;guide();const me=s.me,P=s.players,lobby=s.phase=='lobby',my=!lobby&&s.turn==me,play=my&&s.phase=='play',cur=P[s.turn],col=o=>P[o].col,m=cm();
   $('st').textContent=lobby?`Lobi: ${P.length}/5 — arkadaşların bağlansın`:s.phase=='over'?`🏆 ${P[s.win].name} kazandı!`:s.phase=='setup'?`${cur.name}: ${s.st==='s'?'ÖNCE KÖYÜNÜ KUR':'ŞİMDİ KÖYÜNE BAĞLI BİR YOL KOY'}`:`${cur.name} oynuyor${s.mustRob?' · haydutu taşı!':''}`;
   $('win').hidden=s.phase!='over';if(s.win!=null)$('wt').textContent='🏆 '+P[s.win].name+' kazandı!';
   $('pl').innerHTML=P.map((p,i)=>`<div class="pl ${!lobby&&i==s.turn?'cur':''}"><i class=dot style="background:${p.col}"></i>${p.name}${i==me?' (sen)':''}${p.hasDice?' 🎲':''}<span>👑 ${p.vp} · 🛣️ ${p.road}${p.longest?' ⭐':''} · 🃏 ${p.n}</span></div>`).join('');
@@ -302,7 +312,7 @@ function render(){
   `<g transform="translate(${s.hexes[s.rob].x+.38},${s.hexes[s.rob].y-.2})" filter="url(#sh)"><path d="M-.12.2Q-.1-.05 0-.05Q.1-.05 .12.2Z" fill="#1a1a1a" stroke="#fff4" stroke-width=".02"/><circle cy="-.13" r=".08" fill="#1a1a1a"/></g>`+
      s.E.map(e=>{const dx=e.x2-e.x1,dy=e.y2-e.y1,a=[e.x1+dx*.14,e.y1+dy*.14],b=[e.x1+dx*.86,e.y1+dy*.86],ln=(w,c,x='')=>`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="${c}" stroke-width="${w}" stroke-linecap="round" ${x}/>`;
      const active=e.o===null&&s.h.r&&s.h.r.includes(e.id)&&m==='r';
-     return e.o!=null?ln(.22,'#382312')+ln(.15,col(e.o)):(active?ln(.23,'#ffd76a','class=glow')+ln(.105,'#fff4cf'):'')+`<line class=k x1="${e.x1}" y1="${e.y1}" x2="${e.x2}" y2="${e.y2}" stroke="transparent" stroke-width=".48" pointer-events="stroke" onclick="E('${e.id}')"/>`}).join('')+
+     return e.o!=null?ln(.22,'#382312')+ln(.15,col(e.o)):(active?ln(.23,'#ffd76a','class=glow')+ln(.105,'#fff4cf'):'')}).join('')+
    s.V.map(v=>{const c=v.o!=null?col(v.o):'';let d='';
      if(v.o!=null){
        d=v.c?`<g transform="translate(${v.x},${v.y})" filter="url(#sh)"><path d="M-.29,.19L-.25,.25H.25L.29,.19Z" fill="#79502b" stroke="#3c2514" stroke-width=".025"/><path d="M-.25,.17V-.07H-.07V-.2H.07V-.07H.25V.17Z" fill="#dfc18f" stroke="#684522" stroke-width=".035"/><path d="M-.29,-.055L-.12,-.25H.12L.29,-.055Z" fill="${c}" stroke="#542d1b" stroke-width=".04"/><path d="M-.055,.17V.015H.055V.17Z" fill="#69401f"/><rect x="-.205" y="-.035" width=".065" height=".075" rx=".012" fill="#8fc4d1" stroke="#69401f" stroke-width=".018"/><rect x=".14" y="-.035" width=".065" height=".075" rx=".012" fill="#8fc4d1" stroke="#69401f" stroke-width=".018"/></g>`:
@@ -310,5 +320,26 @@ function render(){
      }
      const active=s.h[m]&&s.h[m].includes(v.id);
      const hl=active?`<circle class="glow" cx="${v.x}" cy="${v.y}" r=".34" fill="#ffd76a" fill-opacity=".13" stroke="#ffe08a" stroke-width=".075"/><circle cx="${v.x}" cy="${v.y}" r=".24" fill="none" stroke="#fff4d1" stroke-width=".025" stroke-dasharray=".07 .045"/>`:'';
-     return`<g class=k onclick="V('${v.id}')" style="pointer-events:all">${hl}${d}<circle cx="${v.x}" cy="${v.y}" r=".43" fill="transparent" pointer-events="all"/></g>`}).join('')}
+     return`<g class=k onclick="V('${v.id}')" style="pointer-events:all">${hl}${d}<circle cx="${v.x}" cy="${v.y}" r=".2" fill="transparent" pointer-events="all"/></g>`}).join('')+edgeHits()}
+function edgeHits(){return s.E.filter(e=>e.o===null).map(e=>{const dx=e.x2-e.x1,dy=e.y2-e.y1;return`<line class=k x1="${e.x1+dx*.25}" y1="${e.y1+dy*.25}" x2="${e.x1+dx*.75}" y2="${e.y1+dy*.75}" stroke="transparent" stroke-width=".42" pointer-events="stroke" onclick="E('${e.id}')"/>`}).join('')}
+function guide(){
+  const me=s.me,P=s.players,cur=P[s.turn],my=s.turn==me,h=s.h,box=$('guide');let t;
+  if(s.phase=='lobby')t=me==0?'👑 Odayı sen kurdun. Arkadaşların <b>oda kodunu</b> girince <b>▶ Oyunu başlat</b>a bas (en az 2 kişi).':'Oda kurucusunun oyunu başlatmasını bekle.';
+  else if(s.phase=='over')t='🎉 Oyun bitti! Yeni oyun için butona bas.';
+  else if(me==null||!P[me])t='İzleyicisin.';
+  else if(!my)t=`⏳ Sıra <b>${cur.name}</b> oyuncusunda. Beklerken: zarda senin arazine denk gelen sayı çıkarsa kartların otomatik artar.`;
+  else if(s.phase=='setup'){const r2=s.si>=s.np;
+    t=s.st=='s'?`<b>Adım 1/2 — Köyünü kur</b><br>Haritada <b>parlayan altın halkalardan</b> birine tıkla.${r2?'<br>🎁 Bu 2. köyün: çevresindeki her araziden 1 kaynak kazanırsın.':''}<br>💡 6, 8, 5, 9 gibi sık çıkan sayılara ve farklı kaynaklara değen köşe iyidir.`
+      :`<b>Adım 2/2 — Yol koy</b><br>Az önce kurduğun köyün yanındaki <b>parlayan çizgilerden</b> birine tıkla (çizginin ortasına).`}
+  else if(s.mustRob)t='🦹 <b>7 geldi!</b> Haydutu taşı: <b>parlayan bir araziye</b> tıkla. O arazi üretmez; yanında köyü olan birinden kart çalarsın.';
+  else if(!s.rolled)t='<b>1. Önce 🎲 Zar at</b> butonuna bas. Çıkan sayıdaki araziler kaynak verir.';
+  else{
+    if(!h[mode].length){const k=['r','s','c'].find(k=>h[k].length);if(k)mode=k}
+    const L=[];
+    if(h.c.length)L.push('🏙️ <b>Şehir</b>: <i>Şehir</i> butonu → parlayan köyüne tıkla (+1 puan)');
+    if(h.s.length)L.push('🏠 <b>Köy</b>: <i>Köy</i> butonu → parlayan köşeye tıkla (+1 puan)');
+    if(h.r.length)L.push('🛣️ <b>Yol</b>: <i>Yol</i> butonu → parlayan çizgiye tıkla');
+    t='<b>2. Kur ya da takas yap</b><br>'+(L.length?L.join('<br>'):'Şu an kaynağın bir şey kurmaya yetmiyor. Aynı türden 4 kartı bankada 1 karta çevirebilirsin (Takas).')+'<br><b>3. İşin bitince ➜ Turu bitir</b>'}
+  box.innerHTML=t+'<br><button onclick="$(\'rules\').hidden=false">📖 Kurallar</button>';
+}
 </script>
