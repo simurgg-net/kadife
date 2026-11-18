@@ -482,13 +482,15 @@ function handleBoardPointer(ev){
   }
   // Yol ve köy aynı anda kurulabilir: tıklanan noktaya en yakın
   // geçerli hedef seçilir; böylece iki önergeyi de gizlemek gerekmez.
-  const road=nearest(s.E.filter(e=>(s.h.ar||[]).includes(e.id)),e=>pointSegDistance(p,e),.72);
-  const settle=nearest(s.V.filter(v=>(s.h.as||[]).includes(v.id)),v=>Math.hypot(p.x-v.x,p.y-v.y),.48);
+  // Tıklama hedefleri kaynak miktarından bağımsızdır. Böylece pasif köy/yol
+  // işaretleri de kendi türünü korur; kaynak kontrolünü oyun motoru yapar.
+  const road=nearest(s.E.filter(e=>(s.h.r||[]).includes(e.id)),e=>pointSegDistance(p,e),.72);
+  const settle=nearest(s.V.filter(v=>(s.h.s||[]).includes(v.id)),v=>Math.hypot(p.x-v.x,p.y-v.y),.48);
   const rd=road?pointSegDistance(p,road)/.72:Infinity;
   const sd=settle?Math.hypot(p.x-settle.x,p.y-settle.y)/.48:Infinity;
   if(settle&&sd<=rd){ev.preventDefault();send({t:'settle',id:settle.id});}
   else if(road){ev.preventDefault();send({t:'road',id:road.id});}
-  else toast('Parlayan köşeye (köy) veya çizgiye (yol) tıkla.');
+  else toast('Köy için halkalı köşeye, yol için çizgiye tıkla.');
 }
 $('b').addEventListener('pointerup',handleBoardPointer,{passive:false});
 $('b').addEventListener('click',ev=>{ev.preventDefault();},{passive:false});
