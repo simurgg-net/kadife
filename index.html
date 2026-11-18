@@ -370,8 +370,10 @@ function hints(i){
   const V=Object.values(g.V),E=Object.values(g.E),p=g.players[i];
   if(g.phase=='setup'){if(g.st==='s')h.s=V.filter(v=>free(v.id)).map(v=>v.id);else if(g.st==='r'&&g.last)h.r=E.filter(e=>e.o===null&&(e.a===g.last||e.b===g.last)).map(e=>e.id)}
   else if(g.phase=='play'&&g.rolled&&!g.mustRob){
-    if(can(p,COST.road))h.r=E.filter(e=>e.o===null&&roadOk(e,i)).map(e=>e.id);
-    if(can(p,COST.settle))h.s=V.filter(v=>free(v.id)&&linked(v.id,i)).map(v=>v.id);
+    h.r=E.filter(e=>e.o===null&&roadOk(e,i)).map(e=>e.id);
+    h.s=V.filter(v=>free(v.id)&&linked(v.id,i)).map(v=>v.id);
+    h.ar=can(p,COST.road)?h.r.slice():[];
+    h.as=can(p,COST.settle)?h.s.slice():[];
     if(can(p,COST.city))h.c=V.filter(v=>v.o===i&&!v.c).map(v=>v.id)}
   return h}
 function view(pid){return{me:pid,phase:g.phase,turn:g.turn,rolled:g.rolled,d:g.d,rob:g.rob,mustRob:g.mustRob,st:g.st,si:g.si,np:g.players.length,win:g.win,log:g.log,h:hints(pid),
@@ -480,8 +482,8 @@ function handleBoardPointer(ev){
   }
   // Yol ve köy aynı anda kurulabilir: tıklanan noktaya en yakın
   // geçerli hedef seçilir; böylece iki önergeyi de gizlemek gerekmez.
-  const road=nearest(s.E.filter(e=>s.h.r.includes(e.id)),e=>pointSegDistance(p,e),.72);
-  const settle=nearest(s.V.filter(v=>s.h.s.includes(v.id)),v=>Math.hypot(p.x-v.x,p.y-v.y),.48);
+  const road=nearest(s.E.filter(e=>(s.h.ar||[]).includes(e.id)),e=>pointSegDistance(p,e),.72);
+  const settle=nearest(s.V.filter(v=>(s.h.as||[]).includes(v.id)),v=>Math.hypot(p.x-v.x,p.y-v.y),.48);
   const rd=road?pointSegDistance(p,road)/.72:Infinity;
   const sd=settle?Math.hypot(p.x-settle.x,p.y-settle.y)/.48:Infinity;
   if(settle&&sd<=rd){ev.preventDefault();send({t:'settle',id:settle.id});}
@@ -507,7 +509,7 @@ function render(){
   $('start').hidden=!(lobby&&me==0&&P.length>1);$('roll').hidden=!(play&&!s.rolled&&!s.mustRob)||manual;
   $('manualRoll').hidden=!(play&&!s.rolled&&!s.mustRob&&manual);$('tools').hidden=!(play&&s.rolled&&!s.mustRob);
   $('mr').className=mode!=='c'?'on':'';
-  $('mr').disabled=!(s.h.r.length||s.h.s.length);
+  $('mr').disabled=!((s.h.ar||[]).length||(s.h.as||[]).length);
   $('mc').className=mode==='c'?'on':'';
   $('mc').disabled=!s.h.c.length;
   $('tradeRate').textContent='Seçili kaynak: '+shownPortRatio(me,$('g1').value||'wood')+':1 (liman avantajı otomatik uygulanır)';
@@ -520,18 +522,20 @@ function render(){
   `<g transform="translate(${s.hexes[s.rob].x+.38},${s.hexes[s.rob].y-.2})" filter="url(#sh)"><path d="M-.12.2Q-.1-.05 0-.05Q.1-.05 .12.2Z" fill="#1a1a1a" stroke="#fff4" stroke-width=".02"/><circle cy="-.13" r=".08" fill="#1a1a1a"/></g>`+
      (s.ports||[]).map(p=>{const labels={any:'⚓ 3:1',wood:'🪵 2:1',brick:'🧱 2:1',sheep:'🐑 2:1',wheat:'🌾 2:1',ore:'⛰️ 2:1'};return `<g transform="translate(${p.x},${p.y})" filter="url(#sh)" pointer-events="none"><rect x="-.34" y="-.14" width=".68" height=".28" rx=".08" fill="#f5e5c2" stroke="#684522" stroke-width=".035"/><text x="0" y=".055" text-anchor="middle" font-size=".145" font-weight="800" fill="#49301c">${labels[p.type]}</text></g>`}).join('')+
      s.E.map(e=>{const dx=e.x2-e.x1,dy=e.y2-e.y1,a=[e.x1+dx*.14,e.y1+dy*.14],b=[e.x1+dx*.86,e.y1+dy*.86],ln=(w,c,x='')=>`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="${c}" stroke-width="${w}" stroke-linecap="round" ${x}/>`;
-     const active=e.o===null&&s.h.r&&s.h.r.includes(e.id);
-     return e.o!=null?ln(.22,'#382312')+ln(.15,col(e.o)):(active?ln(.23,'#ffd76a','class=glow')+ln(.105,'#fff4cf'):'')}).join('')+
+     const active=e.o===null&&s.h&&((s.phase==='play'?(s.h.ar||[]):(s.h.r||[])).includes(e.id));
+     const passive=e.o===null&&s.phase==='play'&&s.h.r&&s.h.r.includes(e.id)&&!(s.h.ar||[]).includes(e.id);
+     return e.o!=null?ln(.22,'#382312')+ln(.15,col(e.o)):(active?ln(.23,'#ffd76a','class=glow')+ln(.105,'#fff4cf'):(passive?ln(.075,'#b8c5ce','stroke-dasharray=.07 .09') :''))}).join('')+
    edgeHits()+
    s.V.map(v=>{const c=v.o!=null?col(v.o):'';let d='';
      if(v.o!=null){
        d=v.c?`<g transform="translate(${v.x},${v.y})" filter="url(#sh)"><path d="M-.29,.19L-.25,.25H.25L.29,.19Z" fill="#79502b" stroke="#3c2514" stroke-width=".025"/><path d="M-.25,.17V-.07H-.07V-.2H.07V-.07H.25V.17Z" fill="#dfc18f" stroke="#684522" stroke-width=".035"/><path d="M-.29,-.055L-.12,-.25H.12L.29,-.055Z" fill="${c}" stroke="#542d1b" stroke-width=".04"/><path d="M-.055,.17V.015H.055V.17Z" fill="#69401f"/><rect x="-.205" y="-.035" width=".065" height=".075" rx=".012" fill="#8fc4d1" stroke="#69401f" stroke-width=".018"/><rect x=".14" y="-.035" width=".065" height=".075" rx=".012" fill="#8fc4d1" stroke="#69401f" stroke-width=".018"/></g>`:
        `<g transform="translate(${v.x},${v.y})" filter="url(#sh)"><path d="M-.24,.17L-.21,.23H.21L.24,.17Z" fill="#79502b" stroke="#3c2514" stroke-width=".025"/><path d="M-.2,.16V-.035L0,-.2L.2,-.035V.16Z" fill="#e4c99b" stroke="#684522" stroke-width=".035"/><path d="M-.245,-.025L0,-.29L.245,-.025Z" fill="${c}" stroke="#542d1b" stroke-width=".04"/><path d="M-.055,.16V.025H.055V.16Z" fill="#69401f"/><rect x="-.15" y=".015" width=".06" height=".065" rx=".01" fill="#8fc4d1" stroke="#69401f" stroke-width=".018"/><rect x=".09" y=".015" width=".06" height=".065" rx=".01" fill="#8fc4d1" stroke="#69401f" stroke-width=".018"/></g>`;
      }
-     const active=(s.h.s&&s.h.s.includes(v.id))||(s.h.c&&s.h.c.includes(v.id));
-     const hl=active?`<circle class="glow" cx="${v.x}" cy="${v.y}" r=".36" fill="#ffd76a" fill-opacity=".24" stroke="#fff0a8" stroke-width=".09"/><circle cx="${v.x}" cy="${v.y}" r=".25" fill="none" stroke="#fff9df" stroke-width=".04" stroke-dasharray=".07 .045"/>`:'';
+     const active=((s.phase==='play'?(s.h.as||[]):(s.h.s||[])).includes(v.id))||(s.h.c&&s.h.c.includes(v.id));
+     const passive=s.phase==='play'&&s.h.s&&s.h.s.includes(v.id)&&!(s.h.as||[]).includes(v.id);
+     const hl=active?`<circle class="glow" cx="${v.x}" cy="${v.y}" r=".36" fill="#ffd76a" fill-opacity=".24" stroke="#fff0a8" stroke-width=".09"/><circle cx="${v.x}" cy="${v.y}" r=".25" fill="none" stroke="#fff9df" stroke-width=".04" stroke-dasharray=".07 .045"/>`:passive?`<circle cx="${v.x}" cy="${v.y}" r=".29" fill="#d7e0e8" fill-opacity=".13" stroke="#d7e0e8" stroke-width=".055" stroke-dasharray=".06 .055"/>`:'';
      return`<g class=k data-hit="vertex" data-id="${v.id}" style="pointer-events:all;cursor:pointer">${hl}${d}<circle cx="${v.x}" cy="${v.y}" r=".31" fill="transparent" pointer-events="all"/></g>`}).join('')}
-function edgeHits(){return s.E.filter(e=>e.o===null&&s.h&&s.h.r&&s.h.r.includes(e.id)).map(e=>{const dx=e.x2-e.x1,dy=e.y2-e.y1;return`<line class=k x1="${e.x1+dx*.22}" y1="${e.y1+dy*.22}" x2="${e.x1+dx*.78}" y2="${e.y1+dy*.78}" stroke="transparent" stroke-width=".72" pointer-events="stroke" data-hit="edge" data-id="${e.id}"/>`}).join('')}
+function edgeHits(){return s.E.filter(e=>e.o===null&&s.h&&(s.h.ar||s.h.r||[]).includes(e.id)).map(e=>{const dx=e.x2-e.x1,dy=e.y2-e.y1;return`<line class=k x1="${e.x1+dx*.22}" y1="${e.y1+dy*.22}" x2="${e.x1+dx*.78}" y2="${e.y1+dy*.78}" stroke="transparent" stroke-width=".72" pointer-events="stroke" data-hit="edge" data-id="${e.id}"/>`}).join('')}
 function guide(){
   const me=s.me,P=s.players,cur=P[s.turn],my=s.turn==me,h=s.h,box=$('guide');let t;
   if(s.phase=='lobby')t=me==0?'👑 Odayı sen kurdun. Arkadaşların <b>oda kodunu</b> girince <b>▶ Oyunu başlat</b>a bas (en az 2 kişi).':'Oda kurucusunun oyunu başlatmasını bekle.';
@@ -547,8 +551,10 @@ function guide(){
     if(mode==='c'&&!h.c.length)mode='auto';
     const L=[];
     if(h.c.length)L.push('🏙️ <b>Şehir</b>: <i>Şehir</i> butonu → parlayan köyüne tıkla (+1 puan)');
-    if(h.s.length)L.push('🏠 <b>Köy</b>: parlayan altın köşeye tıkla (+1 puan)');
-    if(h.r.length)L.push('🛣️ <b>Yol</b>: parlayan altın çizgiye tıkla');
+    if((h.as||[]).length)L.push('🏠 <b>Köy</b>: altın halkalı köşeye tıkla (+1 puan)');
+    else if(h.s.length)L.push('🏠 <b>Köy yerleri</b>: soluk halkalar görünür; kaynakların yetmiyor.');
+    if((h.ar||[]).length)L.push('🛣️ <b>Yol</b>: altın çizgiye tıkla');
+    else if(h.r.length)L.push('🛣️ <b>Yol yerleri</b>: soluk çizgiler görünür; kaynakların yetmiyor.');
     t='<b>2. Kur ya da takas yap</b><br>'+(L.length?L.join('<br>'):'Şu an kaynağın bir şey kurmaya yetmiyor. Aynı türden 4 kartı bankada 1 karta çevirebilirsin (Takas).')+'<br><b>3. İşin bitince ➜ Turu bitir</b>'}
   box.innerHTML=t+'<br><button onclick="$(\'rules\').hidden=false">📖 Kurallar</button>';
 }
