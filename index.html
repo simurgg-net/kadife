@@ -204,7 +204,7 @@ button:disabled{opacity:.4}.die-face{background:linear-gradient(145deg,#fff8e7,#
 <div id=manualRoll hidden class="manual-roll"><small>Fiziksel zarları at ve gelen sonuçları gir:</small>
 <div class="dice-inputs"><input id=die1 type=number min=1 max=6 value=3 aria-label="Birinci zar"><input id=die2 type=number min=1 max=6 value=4 aria-label="İkinci zar"></div>
 <button onclick="send({t:'manualRoll',a:Number($('die1').value),b:Number($('die2').value)})">🎲 Sonucu gönder</button></div></div>
-<div id=tools><button id=mr onclick="mode='auto';render()">🛣️ Yol + 🏠 Köy</button><button id=mc onclick="mode='c';render()">🏙️ Şehir</button>
+<div id=tools><button id=mr onclick="mode='r';render()">🛣️ Yol yap</button><button id=ms onclick="mode='s';render()">🏠 Köy kur</button><button id=mc onclick="mode='c';render()">🏙️ Şehir</button>
 <button onclick="send({t:'end'})">Turu bitir ➜</button><br><small id="tradeRate">Liman varsa 2:1 / 3:1, yoksa banka 4:1</small><br><select id=g1></select> → <select id=g2></select><button onclick="send({t:'trade',give:g1.value,get:g2.value})">Takas</button></div>
 <small>Yol 🪵🧱 · Köy 🪵🧱🐑🌾 · Şehir 2🌾 3⛰️ · 7 gelince altın halkayla vurgulanan araziye tıkla · 10 puan kazanır · En uzun yol (5+) +2 puan</small><div id=log></div></div></div>
 <script>
@@ -480,17 +480,20 @@ function handleBoardPointer(ev){
     else toast('Parlayan şehir köşelerinden birine tıkla.');
     return;
   }
-  // Yol ve köy aynı anda kurulabilir: tıklanan noktaya en yakın
-  // geçerli hedef seçilir; böylece iki önergeyi de gizlemek gerekmez.
-  // Tıklama hedefleri kaynak miktarından bağımsızdır. Böylece pasif köy/yol
-  // işaretleri de kendi türünü korur; kaynak kontrolünü oyun motoru yapar.
-  const road=nearest(s.E.filter(e=>(s.h.r||[]).includes(e.id)),e=>pointSegDistance(p,e),.72);
-  const settle=nearest(s.V.filter(v=>(s.h.s||[]).includes(v.id)),v=>Math.hypot(p.x-v.x,p.y-v.y),.48);
-  const rd=road?pointSegDistance(p,road)/.72:Infinity;
-  const sd=settle?Math.hypot(p.x-settle.x,p.y-settle.y)/.48:Infinity;
-  if(settle&&sd<=rd){ev.preventDefault();send({t:'settle',id:settle.id});}
-  else if(road){ev.preventDefault();send({t:'road',id:road.id});}
-  else toast('Köy için halkalı köşeye, yol için çizgiye tıkla.');
+  // İnşaat türü ayrı butondan seçilir; yol ve köy tıklama hedefleri karışmaz.
+  if(mode==='s'){
+    const v=nearest(s.V.filter(v=>(s.h.s||[]).includes(v.id)),v=>Math.hypot(p.x-v.x,p.y-v.y),.48);
+    if(v){ev.preventDefault();send({t:'settle',id:v.id});}
+    else toast('Köy için işaretli köşe noktasına tıkla.');
+    return;
+  }
+  if(mode==='r'){
+    const e=nearest(s.E.filter(e=>(s.h.r||[]).includes(e.id)),e=>pointSegDistance(p,e),.72);
+    if(e){ev.preventDefault();send({t:'road',id:e.id});}
+    else toast('Yol için işaretli kenara tıkla.');
+    return;
+  }
+  toast('Önce Yol yap veya Köy kur butonunu seç.');
 }
 $('b').addEventListener('pointerup',handleBoardPointer,{passive:false});
 $('b').addEventListener('click',ev=>{ev.preventDefault();},{passive:false});
@@ -510,8 +513,10 @@ function render(){
   const manual=!!(P[me]&&P[me].hasDice);
   $('start').hidden=!(lobby&&me==0&&P.length>1);$('roll').hidden=!(play&&!s.rolled&&!s.mustRob)||manual;
   $('manualRoll').hidden=!(play&&!s.rolled&&!s.mustRob&&manual);$('tools').hidden=!(play&&s.rolled&&!s.mustRob);
-  $('mr').className=mode!=='c'?'on':'';
-  $('mr').disabled=!((s.h.ar||[]).length||(s.h.as||[]).length);
+  $('mr').className=mode==='r'?'on':'';
+  $('mr').disabled=!(s.h.r||[]).length;
+  $('ms').className=mode==='s'?'on':'';
+  $('ms').disabled=!(s.h.s||[]).length;
   $('mc').className=mode==='c'?'on':'';
   $('mc').disabled=!s.h.c.length;
   $('tradeRate').textContent='Seçili kaynak: '+shownPortRatio(me,$('g1').value||'wood')+':1 (liman avantajı otomatik uygulanır)';
